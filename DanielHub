@@ -1,0 +1,78 @@
+-- DanielHub Simple Mobile & PC Version
+local ScreenGui = Instance.new("ScreenGui")
+local FlyBtn = Instance.new("TextButton")
+local AimBtn = Instance.new("TextButton")
+
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "DanielSimpleHub"
+
+-- Nút Fly (Màu Xanh)
+FlyBtn.Name = "FlyBtn"
+FlyBtn.Parent = ScreenGui
+FlyBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+FlyBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
+FlyBtn.Size = UDim2.new(0, 120, 0, 50)
+FlyBtn.Text = "FLY: OFF"
+FlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyBtn.TextSize = 20
+
+-- Nút Aim (Màu Đỏ)
+AimBtn.Name = "AimBtn"
+AimBtn.Parent = ScreenGui
+AimBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+AimBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
+AimBtn.Size = UDim2.new(0, 120, 0, 50)
+AimBtn.Text = "AIM: OFF"
+AimBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AimBtn.TextSize = 20
+
+-- BIẾN TRẠNG THÁI
+local flying = false
+local aiming = false
+local player = game.Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- LOGIC FLY
+FlyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    FlyBtn.Text = flying and "FLY: ON" or "FLY: OFF"
+    FlyBtn.BackgroundColor3 = flying and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(170, 0, 0)
+    
+    local char = player.Character
+    if flying and char then
+        local bv = Instance.new("BodyVelocity", char.HumanoidRootPart)
+        bv.Name = "SimpleFly"
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        task.spawn(function()
+            while flying do
+                bv.Velocity = camera.CFrame.LookVector * 70
+                task.wait()
+            end
+            bv:Destroy()
+        end)
+    end
+end)
+
+-- LOGIC AIMBOT
+AimBtn.MouseButton1Click:Connect(function()
+    aiming = not aiming
+    AimBtn.Text = aiming and "AIM: ON" or "AIM: OFF"
+    AimBtn.BackgroundColor3 = aiming and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(170, 0, 0)
+end)
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if aiming and game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local target = nil
+        local dist = 1000
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= player and v.Character and v.Character:FindFirstChild("Head") then
+                local pos, vis = camera:WorldToViewportPoint(v.Character.Head.Position)
+                if vis then
+                    local m = (Vector2.new(pos.X, pos.Y) - game:GetService("UserInputService"):GetMouseLocation()).Magnitude
+                    if m < dist then dist = m target = v.Character.Head end
+                end
+            end
+        end
+        if target then camera.CFrame = CFrame.new(camera.CFrame.Position, target.Position) end
+    end
+end)
